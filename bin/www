@@ -7,6 +7,12 @@
 var app = require('../app');
 var debug = require('debug')('project_Nodejs:server');
 var http = require('http');
+var url = require('url');
+var WebSocketServer = require('ws').Server;
+
+var cluster = require('cluster');
+var sticky = require('sticky-session');
+
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +26,43 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+/**
+ * Create Web Socket.
+ */
+var wsServer = new WebSocketServer({ server: server });
+
+/**
+ * Listen on web socket connection, on all network interfaces.
+ */
+
+wsServer.on('connection', connection);
+
+/**
+ * Event listener new connection.
+ */
+
+function connection(ws) {
+    //var location = url.parse(ws.upgradeReq.url, true);
+
+    console.log("create new connection");
+    ws.send('something');
+
+    ws.on('message', function incoming(message) {
+        console.log('received: %s', message);
+        wsServer.broadcast("broadcast");
+    });
+
+}
+
+/**
+ * Send broadcast messages.
+ */
+
+wsServer.broadcast = function(data){
+  for(var i in this.clients)
+    this.clients[i].send(data);
+};
 
 /**
  * Listen on provided port, on all network interfaces.
