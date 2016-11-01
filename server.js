@@ -6,10 +6,25 @@ var http = require('http');
 var sticky = require('sticky-session');
 var WebSocketServer = require('ws').Server;
 var express = require('express');
+var session = require('express-session');
 var app = express();
 
+
+app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }, resave: true, saveUninitialized: true }));
+
+
+var sess;
+
 app.get('/', function (req, res) {
-    res.send('Worker | ' +process.pid+' | '+cluster.worker.id);
+
+    sess = req.session;
+    if(sess.test){
+        res.send('Worker | ' +process.pid+' | '+cluster.worker.id +' | ' +sess.test);
+    }else{
+        console.log("--no session--");
+        sess.test="ok";
+        res.send('Worker | ' +process.pid+' | '+cluster.worker.id);
+    }
 });
 
 var server = require('http').createServer(app);
